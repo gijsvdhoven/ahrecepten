@@ -1,0 +1,13 @@
+# Productie / Dockge: draait de kant-en-klare image van GHCR, gebouwd door
+# .github/workflows/docker-publish.yml. Deze stack heeft alleen dit bestand en
+# een .env nodig, en die twee kun je allebei in de Dockge-UI beheren.
+#
+# Zelf bouwen uit de source? Gebruik compose.build.yaml:
+#   docker compose -f compose.build.yaml up -d --build
+services:
+  trmnl-ah-recept:
+    image: ghcr.io/gijsvdhoven/ahrecepten:latest
+    container_name: trmnl-ah-recept
+    env_file:
+      - .env
+    restart: unless-stopped

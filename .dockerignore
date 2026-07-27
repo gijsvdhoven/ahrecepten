@@ -1,0 +1,11 @@
+.git
+.github
+tests
+__pycache__
+*.pyc
+.pytest_cache
+.env
+README.md
+compose.yaml
+compose.build.yaml
+trmnl-full.liquid

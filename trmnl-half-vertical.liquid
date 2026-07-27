@@ -1,0 +1,59 @@
+{%- comment -%}
+  TRMNL half_vertical layout (400x480).
+
+  Smal maar hoog: alles onder elkaar. Er is ruimte voor de foto, een korte
+  ingrediëntenlijst en de eerste stappen van de bereiding -- maar het is vol.
+  De stappen zijn tot twee regels geklemd; voor de volledige bereidingswijze is
+  het volle scherm bedoeld.
+{%- endcomment -%}
+
+{%- assign meta = "" -%}
+{%- if servings -%}{%- assign meta = meta | append: servings -%}{%- endif -%}
+{%- if prep_time -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: prep_time -%}
+{%- endif -%}
+{%- if kcal -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: kcal -%}
+{%- endif -%}
+
+{%- assign ingredient_count = ingredients | size -%}
+{%- assign step_count = steps | size -%}
+
+<div class="layout">
+  <span class="title title--small">Recept van vandaag</span>
+  <span class="value value--large" data-clamp="2">{{ title }}</span>
+  {%- if meta != "" %}
+  <span class="label">{{ meta }}</span>
+  {%- endif %}
+
+  {%- if image %}
+  <img class="image image-dither image--cover w--full h--[80px] shrink-0" src="{{ image }}" alt="">
+  {%- endif %}
+
+  {%- if ingredient_count > 0 %}
+  <span class="title title--small">Ingrediënten</span>
+  {%- for ingredient in ingredients limit: 5 %}
+  <span class="description">{{ ingredient }}</span>
+  {%- endfor %}
+  {%- endif %}
+
+  {%- if step_count > 0 %}
+  <span class="title title--small">Bereiding</span>
+  {%- for step in steps limit: 3 %}
+  <div class="item">
+    <div class="meta"><span class="index">{{ forloop.index }}</span></div>
+    <div class="content">
+      <span class="description" data-clamp="2">{{ step }}</span>
+    </div>
+  </div>
+  {%- endfor %}
+  {%- endif %}
+</div>
+
+<div class="title_bar">
+  <img class="image" src="/images/plugins/trmnl--render.svg" alt="">
+  <span class="title">Allerhande</span>
+  <span class="instance">{{ date | date: "%d-%m-%Y" }}</span>
+</div>

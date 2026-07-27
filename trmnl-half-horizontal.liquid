@@ -1,0 +1,40 @@
+{%- comment -%}
+  TRMNL half_horizontal layout (800x240).
+
+  Halve hoogte: geen ruimte voor de ingrediëntenlijst, dus alleen titel,
+  metaregel en de afbeelding.
+{%- endcomment -%}
+
+{%- assign meta = "" -%}
+{%- if servings -%}{%- assign meta = meta | append: servings -%}{%- endif -%}
+{%- if prep_time -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: prep_time -%}
+{%- endif -%}
+{%- if kcal -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: kcal -%}
+{%- endif -%}
+
+<div class="layout">
+  <div class="columns">
+    <div class="column">
+      <span class="title title--small">Recept van vandaag</span>
+      <span class="value value--large" data-clamp="2">{{ title }}</span>
+      {%- if meta != "" %}
+      <span class="label">{{ meta }}</span>
+      {%- endif %}
+    </div>
+    {%- if image %}
+    <div class="column">
+      <img class="image image-dither image--cover" src="{{ image }}" alt="">
+    </div>
+    {%- endif %}
+  </div>
+</div>
+
+<div class="title_bar">
+  <img class="image" src="/images/plugins/trmnl--render.svg" alt="">
+  <span class="title">Allerhande</span>
+  <span class="instance">{{ date | date: "%d-%m-%Y" }}</span>
+</div>
