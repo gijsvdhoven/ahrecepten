@@ -1,7 +1,0 @@
-services:
-  trmnl-ah-recept:
-    build: .
-    container_name: trmnl-ah-recept
-    env_file:
-      - .env
-    restart: unless-stopped

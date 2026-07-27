@@ -13,12 +13,37 @@ via een webhook naar een TRMNL private plugin.
 3. **.env**: `cp .env.example .env` en vul beide URL's in — je publieke
    iCal-link en de webhook-URL uit stap 1. `.env` staat in `.gitignore` en zit
    dus niet in deze repo.
-4. **Build & run**:
+4. **Run**:
    ```bash
-   docker compose up -d --build
+   docker compose up -d
    ```
+   Dit haalt de kant-en-klare image van GHCR. Zelf bouwen uit de source kan met
+   `docker compose -f compose.build.yaml up -d --build`.
+
    Bij het opstarten draait het script direct 1x (zie logs met
    `docker compose logs -f`), en daarna elke dag om 06:00 via cron.
+
+## Deployen met Dockge
+
+De GitHub Action in `.github/workflows/docker-publish.yml` bouwt bij elke push
+naar `main` een image voor `linux/amd64` en `linux/arm64` en publiceert die als
+`ghcr.io/gijsvdhoven/ahrecepten:latest`. Daardoor heeft een Dockge-stack alleen
+`compose.yaml` en `.env` nodig, en die kun je allebei in de Dockge-UI beheren —
+geen Dockerfile of source op de host nodig.
+
+1. Zet het GHCR-package op **public** (of log op de host eenmalig in met
+   `docker login ghcr.io`), anders kan Dockge de image niet pullen. Dat doe je
+   op GitHub bij Packages → `ahrecepten` → Package settings → Change visibility.
+2. Maak in Dockge een nieuwe stack `trmnl-ah-recept` en plak de inhoud van
+   `compose.yaml` erin.
+3. Vul in het `.env`-tabblad `ICAL_URL` en `TRMNL_WEBHOOK_URL` in.
+4. Deploy. Bij een nieuwe versie is Dockge's **Update** genoeg: die doet een
+   `pull` + `up`, en omdat de image uit de registry komt hoeft er niets
+   gebouwd te worden.
+
+Let op: `build:` staat met opzet niet in `compose.yaml`. Dockge is gebouwd rond
+de compose-file en heeft geen ondersteuning voor het bouwen van een Dockerfile,
+dus een stack met `build:` zou bij elke Update de oude image blijven draaien.
 
 ## Env vars
 

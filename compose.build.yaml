@@ -1,0 +1,13 @@
+# Lokaal bouwen uit de source i.p.v. de GHCR-image gebruiken:
+#   docker compose -f compose.build.yaml up -d --build
+#
+# Dit bestand heeft met opzet geen standaard compose-naam, zodat een kale
+# `docker compose up` altijd compose.yaml (de GHCR-image) pakt.
+services:
+  trmnl-ah-recept:
+    build: .
+    image: ghcr.io/gijsvdhoven/ahrecepten:latest
+    container_name: trmnl-ah-recept
+    env_file:
+      - .env
+    restart: unless-stopped
