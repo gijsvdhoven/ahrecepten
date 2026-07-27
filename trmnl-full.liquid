@@ -1,0 +1,16 @@
+<div class="layout">
+  <div class="columns">
+    <div class="column">
+      <span class="title">Recept van vandaag</span>
+      <span class="value value--large">{{ title }}</span>
+      {% if url %}
+        <span class="description">{{ url }}</span>
+      {% endif %}
+    </div>
+    {% if image %}
+    <div class="column">
+      <img src="{{ image }}" class="image" />
+    </div>
+    {% endif %}
+  </div>
+</div>
