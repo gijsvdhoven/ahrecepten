@@ -28,25 +28,32 @@ via een webhook naar een TRMNL private plugin.
 Het display is 800x480 en 2-bit grijs: vier tinten, geen accentkleur. Hiërarchie
 moet dus uit lettergrootte, gewicht en witruimte komen.
 
-| Layout            | Bestand                        | Formaat   | Toont                                        |
-|-------------------|--------------------------------|-----------|----------------------------------------------|
-| `full`            | `trmnl-full.liquid`            | 800 x 480 | titel, meta, afbeelding, ingrediënten (2 kol.) |
-| `half_horizontal` | `trmnl-half-horizontal.liquid` | 800 x 240 | titel, meta, afbeelding                       |
-| `half_vertical`   | `trmnl-half-vertical.liquid`   | 400 x 480 | titel, meta, afbeelding, 6 ingrediënten       |
-| `quadrant`        | `trmnl-quadrant.liquid`        | 400 x 240 | titel, meta                                   |
+| Layout            | Bestand                        | Formaat   | Toont                                          |
+|-------------------|--------------------------------|-----------|------------------------------------------------|
+| `full`            | `trmnl-full.liquid`            | 800 x 480 | foto, ingrediënten én bereidingswijze          |
+| `half_horizontal` | `trmnl-half-horizontal.liquid` | 800 x 240 | titel, meta, foto                              |
+| `half_vertical`   | `trmnl-half-vertical.liquid`   | 400 x 480 | foto, 5 ingrediënten, 3 stappen (geklemd)      |
+| `quadrant`        | `trmnl-quadrant.liquid`        | 400 x 240 | titel, meta                                    |
 
 Uitgangspunten:
 
-- **Het volle scherm is een kookscherm.** Daarom staan de ingrediënten erop en
-  niet alleen de titel. De bereidingsstappen bewust niet: die passen niet
-  leesbaar op 480 px hoogte, en je hebt ze pas nodig als je al kookt.
-- **Ingrediënten in twee kolommen** op het volle scherm, gesplitst met
-  `limit`/`offset`. Bij een oneven aantal krijgt de linkerkolom er één meer.
+- **Het volle scherm is een kookscherm.** Kopstrook met titel, meta en een
+  compacte foto; daaronder de ingrediënten links (smalle kolom, want korte
+  regels) en de bereidingswijze rechts (brede kolom, want lange regels).
+- **De foto is klein met opzet** (180 x 104). Groot genoeg om het gerecht te
+  herkennen, klein genoeg om de bereidingswijze niet van het scherm te drukken.
+  De URL komt uit de JSON-LD; TRMNL haalt de foto zelf op en dithert hem.
+- **De stappen zijn genummerd** via de `item`/`index`-component, zodat je kunt
+  terugvinden waar je was.
 - **De metaregel** ("4 personen · 20 min · 560 kcal") wordt in Liquid opgebouwd,
   zodat er geen losse `·` overblijft als AH een veld niet levert.
-- **Elke layout degradeert netjes**: zonder afbeelding valt die kolom weg, zonder
-  ingrediënten het hele onderste blok, en zonder recept staat er "Geen recept
-  gevonden voor vandaag".
+- **Elke layout degradeert netjes**: zonder foto valt die weg, zonder
+  ingrediënten of stappen verdwijnt dat blok, en zonder recept staat er "Geen
+  recept gevonden voor vandaag".
+
+Loopt de bereidingswijze bij een lang recept tegen de titelbalk aan? Verlaag
+`MAX_STEPS` in `main.py`, of klem de stappen met `data-clamp="2"` zoals
+`trmnl-half-vertical.liquid` doet.
 
 Op het TRMNL-platform wordt je markup automatisch in de juiste `view`-div
 gewikkeld, dus de templates leveren alleen `layout` + `title_bar` — en die

@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from main import (
     MAX_INGREDIENTS,
+    MAX_STEPS,
     PAYLOAD_LIMIT_BYTES,
     build_payload,
     normalize_ical_url,
@@ -218,6 +219,36 @@ def test_payload_stays_under_2kb_with_absurd_ingredients():
 def test_payload_size_counts_utf8_bytes():
     """é is twee bytes; een naïeve len() zou de limiet onderschatten."""
     assert payload_size({"a": "é"}) > len(str({"a": "é"})) - 4
+
+
+def test_payload_includes_steps():
+    extra = {"title": "X", "steps": ["Kook de pasta.", "Meng de dressing."]}
+    mv = build_payload(AH_URL, None, extra, today=TODAY)["merge_variables"]
+    assert mv["steps"] == ["Kook de pasta.", "Meng de dressing."]
+
+
+def test_steps_key_always_present_for_liquid():
+    assert build_payload(None, None, {}, today=TODAY)["merge_variables"]["steps"] == []
+
+
+def test_steps_are_capped():
+    extra = {"title": "X", "steps": [f"Stap {i} doet iets." for i in range(20)]}
+    mv = build_payload(AH_URL, None, extra, today=TODAY)["merge_variables"]
+    assert len(mv["steps"]) <= MAX_STEPS
+
+
+def test_steps_are_dropped_before_ingredients_when_over_2kb():
+    """Bij overloop sneuvelen eerst stappen; de boodschappenlijst blijft."""
+    extra = {
+        "title": "Stoofpot",
+        "ingredients": [f"{i} g van een ingredient met een lange naam" for i in range(16)],
+        "steps": ["Een bijzonder uitvoerig omschreven stap. " * 12 for _ in range(6)],
+    }
+    payload = build_payload(AH_URL, None, extra, today=TODAY)
+    mv = payload["merge_variables"]
+    assert payload_size(payload) <= PAYLOAD_LIMIT_BYTES
+    assert len(mv["steps"]) < 6
+    assert len(mv["ingredients"]) == 16
 
 
 def test_realistic_recipe_payload_is_comfortably_small():

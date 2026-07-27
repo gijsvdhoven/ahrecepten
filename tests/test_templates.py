@@ -42,6 +42,14 @@ FULL_RECIPE = {
         "4 tomaten",
         "250 g mini-mozzarellabolletjes",
     ],
+    "steps": [
+        "Kook de pasta volgens de aanwijzingen op de verpakking.",
+        "Pureer de helft van de basilicum met de knoflook, het citroensap, de "
+        "olijfolie en het water tot een dressing.",
+        "Giet de pasta af en meng direct in een schaal met de dressing.",
+        "Scheur de rest van de basilicum in stukjes en meng er vlak voor het "
+        "serveren de lente-ui, tomaat en mozzarella door.",
+    ],
 }
 
 
@@ -83,21 +91,36 @@ def test_no_image_tag_when_there_is_no_image(name):
     assert "image-dither" not in out
 
 
-def test_full_layout_splits_ingredients_over_two_columns():
+def test_full_layout_shows_every_ingredient_and_step():
     out = render("trmnl-full.liquid", FULL_RECIPE)
-    first, second = out.split('<div class="column">')[-2:]
-    # 9 ingredienten -> 5 links, 4 rechts
-    assert first.count('class="description"') == 5
-    assert second.count('class="description"') == 4
-    assert "250 g schelpenpasta" in first
-    assert "250 g mini-mozzarellabolletjes" in second
+    for ingredient in FULL_RECIPE["ingredients"]:
+        assert ingredient in out
+    for step in FULL_RECIPE["steps"]:
+        assert step in out
 
 
-def test_full_layout_splits_odd_count_without_losing_an_ingredient():
-    extra = {"title": "X", "ingredients": [f"ingredient {i}" for i in range(1, 8)]}
-    out = render("trmnl-full.liquid", extra)
-    for i in range(1, 8):
-        assert f"ingredient {i}" in out
+def test_full_layout_numbers_the_steps():
+    out = render("trmnl-full.liquid", FULL_RECIPE)
+    for n in range(1, 5):
+        assert f'<span class="index">{n}</span>' in out
+
+
+def test_full_layout_keeps_the_recipe_photo():
+    out = render("trmnl-full.liquid", FULL_RECIPE)
+    assert FULL_RECIPE["image"] in out
+    assert "image-dither" in out
+
+
+def test_steps_block_disappears_when_there_are_no_steps():
+    out = render("trmnl-full.liquid", {"title": "X", "ingredients": ["1 ui"]})
+    assert "Bereiding" not in out
+    assert "Ingrediënten" in out
+
+
+def test_ingredients_block_disappears_when_there_are_none():
+    out = render("trmnl-full.liquid", {"title": "X", "steps": ["Kook de pasta."]})
+    assert "Ingrediënten" not in out
+    assert "Bereiding" in out
 
 
 def test_meta_line_has_no_leading_separator_when_servings_missing():
@@ -106,8 +129,23 @@ def test_meta_line_has_no_leading_separator_when_servings_missing():
     assert ">·" not in out.replace(" ", "")
 
 
-def test_quadrant_omits_ingredients_and_image():
+def test_quadrant_omits_ingredients_steps_and_image():
     out = render("trmnl-quadrant.liquid", FULL_RECIPE)
     assert "Ingrediënten" not in out
+    assert "Bereiding" not in out
     assert "image-dither" not in out
     assert "4 personen · 20 min · 560 kcal" in out
+
+
+def test_half_vertical_limits_ingredients_and_steps():
+    out = render("trmnl-half-vertical.liquid", FULL_RECIPE)
+    assert out.count('class="description"') <= 5 + 3
+    assert '<span class="index">3</span>' in out
+    assert '<span class="index">4</span>' not in out
+
+
+def test_half_horizontal_is_a_summary_only():
+    out = render("trmnl-half-horizontal.liquid", FULL_RECIPE)
+    assert "Bereiding" not in out
+    assert "Ingrediënten" not in out
+    assert FULL_RECIPE["image"] in out

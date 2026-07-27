@@ -17,6 +17,9 @@ URL_RE = re.compile(r"https?://\S+")
 PAYLOAD_LIMIT_BYTES = 2048
 # Meer dan dit past toch niet op het scherm, ook niet in twee kolommen.
 MAX_INGREDIENTS = 16
+# De bereiding krijgt de rechterhelft van het volle scherm; daar passen er
+# ongeveer vijf van normale lengte in.
+MAX_STEPS = 6
 
 
 def require_env(name: str) -> str:
@@ -132,14 +135,13 @@ def payload_size(payload) -> int:
 def build_payload(url, fallback_title, extra, today: date | None = None):
     """Bouw de TRMNL webhook-payload.
 
-    De ingrediënten gaan mee: daarmee is het volle scherm bruikbaar in de
-    keuken i.p.v. alleen een titelkaart. De stappen laten we weg, die passen
-    niet op een display van 800x480.
+    Zowel de ingrediënten als de bereidingswijze gaan mee: daarmee is het volle
+    scherm bruikbaar in de keuken i.p.v. alleen een titelkaart.
 
-    De webhook accepteert max. 2KB. Een normaal recept komt rond de 600 bytes
-    uit, maar bij een uitzonderlijk lange ingrediëntenlijst laten we van
-    achteren ingrediënten vallen tot het past -- liever een afgekapte lijst dan
-    een webhook die de payload weigert.
+    De webhook accepteert max. 2KB. Een normaal recept komt rond de 1100 bytes
+    uit. Past het niet, dan vallen eerst stappen van achteren weg en daarna
+    ingrediënten -- liever een afgekapte lijst dan een webhook die de hele
+    payload weigert. Een recept met zoveel tekst past sowieso niet op 800x480.
     """
     today = today or date.today()
 
@@ -156,11 +158,22 @@ def build_payload(url, fallback_title, extra, today: date | None = None):
     }
 
     ingredients = [i for i in (extra.get("ingredients") or []) if i][:MAX_INGREDIENTS]
+    steps = [s for s in (extra.get("steps") or []) if s][:MAX_STEPS]
 
-    payload = {"merge_variables": {**base, "ingredients": ingredients}}
-    while ingredients and payload_size(payload) > PAYLOAD_LIMIT_BYTES:
-        ingredients.pop()
-        payload = {"merge_variables": {**base, "ingredients": ingredients}}
+    def assemble():
+        return {
+            "merge_variables": {
+                **base,
+                "ingredients": ingredients,
+                "steps": steps,
+            }
+        }
+
+    payload = assemble()
+    for victim in (steps, ingredients):
+        while victim and payload_size(payload) > PAYLOAD_LIMIT_BYTES:
+            victim.pop()
+            payload = assemble()
 
     return payload
 

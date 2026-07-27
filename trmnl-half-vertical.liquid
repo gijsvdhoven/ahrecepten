@@ -1,8 +1,10 @@
 {%- comment -%}
   TRMNL half_vertical layout (400x480).
 
-  Smal maar hoog: alles onder elkaar. De afbeelding blijft, en er is ruimte
-  voor een korte ingrediëntenlijst in één kolom.
+  Smal maar hoog: alles onder elkaar. Er is ruimte voor de foto, een korte
+  ingrediëntenlijst en de eerste stappen van de bereiding -- maar het is vol.
+  De stappen zijn tot twee regels geklemd; voor de volledige bereidingswijze is
+  het volle scherm bedoeld.
 {%- endcomment -%}
 
 {%- assign meta = "" -%}
@@ -16,23 +18,36 @@
   {%- assign meta = meta | append: kcal -%}
 {%- endif -%}
 
-{%- assign count = ingredients | size -%}
+{%- assign ingredient_count = ingredients | size -%}
+{%- assign step_count = steps | size -%}
 
 <div class="layout">
   <span class="title title--small">Recept van vandaag</span>
-  <span class="value value--large" data-clamp="3">{{ title }}</span>
+  <span class="value value--large" data-clamp="2">{{ title }}</span>
   {%- if meta != "" %}
   <span class="label">{{ meta }}</span>
   {%- endif %}
 
   {%- if image %}
-  <img class="image image-dither image--cover" src="{{ image }}" alt="">
+  <img class="image image-dither image--cover w--full h--[80px] shrink-0" src="{{ image }}" alt="">
   {%- endif %}
 
-  {%- if count > 0 %}
+  {%- if ingredient_count > 0 %}
   <span class="title title--small">Ingrediënten</span>
-  {%- for ingredient in ingredients limit: 6 %}
+  {%- for ingredient in ingredients limit: 5 %}
   <span class="description">{{ ingredient }}</span>
+  {%- endfor %}
+  {%- endif %}
+
+  {%- if step_count > 0 %}
+  <span class="title title--small">Bereiding</span>
+  {%- for step in steps limit: 3 %}
+  <div class="item">
+    <div class="meta"><span class="index">{{ forloop.index }}</span></div>
+    <div class="content">
+      <span class="description" data-clamp="2">{{ step }}</span>
+    </div>
+  </div>
   {%- endfor %}
   {%- endif %}
 </div>
