@@ -1,0 +1,31 @@
+{%- comment -%}
+  TRMNL quadrant layout (400x240).
+
+  Een kwart scherm: alleen de titel en de metaregel. Een afbeelding wordt hier
+  zo klein dat je er niets aan hebt, en de ingrediënten passen niet.
+{%- endcomment -%}
+
+{%- assign meta = "" -%}
+{%- if servings -%}{%- assign meta = meta | append: servings -%}{%- endif -%}
+{%- if prep_time -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: prep_time -%}
+{%- endif -%}
+{%- if kcal -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: kcal -%}
+{%- endif -%}
+
+<div class="layout">
+  <span class="title title--small">Recept van vandaag</span>
+  <span class="value" data-clamp="3">{{ title }}</span>
+  {%- if meta != "" %}
+  <span class="label">{{ meta }}</span>
+  {%- endif %}
+</div>
+
+<div class="title_bar">
+  <img class="image" src="/images/plugins/trmnl--render.svg" alt="">
+  <span class="title">Allerhande</span>
+  <span class="instance">{{ date | date: "%d-%m-%Y" }}</span>
+</div>

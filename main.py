@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -11,6 +12,11 @@ from ah_scraper import scrape_recipe
 PREFIX = "Ik eet vandaag:"
 
 URL_RE = re.compile(r"https?://\S+")
+
+# TRMNL weigert webhook-payloads boven 2KB.
+PAYLOAD_LIMIT_BYTES = 2048
+# Meer dan dit past toch niet op het scherm, ook niet in twee kolommen.
+MAX_INGREDIENTS = 16
 
 
 def require_env(name: str) -> str:
@@ -118,27 +124,45 @@ def enrich_from_page(url):
         return {}
 
 
+def payload_size(payload) -> int:
+    """Grootte in bytes zoals TRMNL die ziet (UTF-8, dus é telt voor twee)."""
+    return len(json.dumps(payload).encode("utf-8"))
+
+
 def build_payload(url, fallback_title, extra, today: date | None = None):
     """Bouw de TRMNL webhook-payload.
 
-    De webhook accepteert max. 2KB, dus we sturen alleen een compacte selectie
-    door. `extra` (ah_scraper output) bevat meer (ingrediënten, stappen,
-    rating) mocht je die ooit ergens anders willen gebruiken.
+    De ingrediënten gaan mee: daarmee is het volle scherm bruikbaar in de
+    keuken i.p.v. alleen een titelkaart. De stappen laten we weg, die passen
+    niet op een display van 800x480.
+
+    De webhook accepteert max. 2KB. Een normaal recept komt rond de 600 bytes
+    uit, maar bij een uitzonderlijk lange ingrediëntenlijst laten we van
+    achteren ingrediënten vallen tot het past -- liever een afgekapte lijst dan
+    een webhook die de payload weigert.
     """
     today = today or date.today()
-    return {
-        "merge_variables": {
-            "title": extra.get("title")
-            or fallback_title
-            or "Geen recept gevonden voor vandaag",
-            "url": url,
-            "image": extra.get("image"),
-            "servings": extra.get("servings"),
-            "prep_time": extra.get("prep_time") or extra.get("total_time"),
-            "kcal": extra.get("kcal"),
-            "date": today.isoformat(),
-        }
+
+    base = {
+        "title": extra.get("title")
+        or fallback_title
+        or "Geen recept gevonden voor vandaag",
+        "url": url,
+        "image": extra.get("image"),
+        "servings": extra.get("servings"),
+        "prep_time": extra.get("prep_time") or extra.get("total_time"),
+        "kcal": extra.get("kcal"),
+        "date": today.isoformat(),
     }
+
+    ingredients = [i for i in (extra.get("ingredients") or []) if i][:MAX_INGREDIENTS]
+
+    payload = {"merge_variables": {**base, "ingredients": ingredients}}
+    while ingredients and payload_size(payload) > PAYLOAD_LIMIT_BYTES:
+        ingredients.pop()
+        payload = {"merge_variables": {**base, "ingredients": ingredients}}
+
+    return payload
 
 
 def main():

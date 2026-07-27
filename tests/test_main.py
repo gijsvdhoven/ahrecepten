@@ -7,9 +7,12 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from main import (
+    MAX_INGREDIENTS,
+    PAYLOAD_LIMIT_BYTES,
     build_payload,
     normalize_ical_url,
     parse_todays_recipe,
+    payload_size,
 )
 
 TODAY = date(2026, 7, 27)
@@ -171,6 +174,74 @@ def test_payload_uses_total_time_when_prep_time_missing():
     extra = {"title": "X", "total_time": "40 min"}
     payload = build_payload(AH_URL, None, extra, today=TODAY)
     assert payload["merge_variables"]["prep_time"] == "40 min"
+
+
+# --- ingrediënten in de payload -------------------------------------------
+
+
+def test_payload_includes_ingredients():
+    extra = {"title": "X", "ingredients": ["250 g schelpenpasta", "4 tomaten"]}
+    mv = build_payload(AH_URL, None, extra, today=TODAY)["merge_variables"]
+    assert mv["ingredients"] == ["250 g schelpenpasta", "4 tomaten"]
+
+
+def test_ingredients_key_always_present_for_liquid():
+    """Het template loopt over `ingredients`; die moet altijd bestaan."""
+    assert build_payload(None, None, {}, today=TODAY)["merge_variables"][
+        "ingredients"
+    ] == []
+
+
+def test_ingredients_are_capped():
+    extra = {"title": "X", "ingredients": [f"ingredient {i}" for i in range(40)]}
+    mv = build_payload(AH_URL, None, extra, today=TODAY)["merge_variables"]
+    assert len(mv["ingredients"]) <= MAX_INGREDIENTS
+
+
+def test_payload_stays_under_2kb_with_absurd_ingredients():
+    """Een extreem lange lijst mag de webhook niet over de 2KB duwen."""
+    extra = {
+        "title": "Zeer uitgebreide stoofpot met heel veel ingrediënten",
+        "image": "https://static.ah.nl/" + "x" * 180 + ".jpg",
+        "servings": "6 personen",
+        "prep_time": "2 u 30 min",
+        "kcal": "890 kcal",
+        "ingredients": [f"{i} gram van een ingrediënt met een lange naam" for i in range(40)],
+    }
+    payload = build_payload(AH_URL, None, extra, today=TODAY)
+    assert payload_size(payload) <= PAYLOAD_LIMIT_BYTES
+    # de rest van de velden mag niet gesneuveld zijn
+    assert payload["merge_variables"]["title"].startswith("Zeer uitgebreide")
+    assert payload["merge_variables"]["kcal"] == "890 kcal"
+
+
+def test_payload_size_counts_utf8_bytes():
+    """é is twee bytes; een naïeve len() zou de limiet onderschatten."""
+    assert payload_size({"a": "é"}) > len(str({"a": "é"})) - 4
+
+
+def test_realistic_recipe_payload_is_comfortably_small():
+    extra = {
+        "title": "Pastasalade met tomaat en mozzarella",
+        "image": "https://static.ah.nl/static/recepten/img_R-R484610_1024x1024.jpg",
+        "servings": "4 personen",
+        "prep_time": "20 min",
+        "kcal": "560 kcal",
+        "ingredients": [
+            "250 g schelpenpasta",
+            "1 knoflookteen",
+            "30 g verse basilicum",
+            "2 el citroensap",
+            "5 el extra vierge olijfolie",
+            "2 el water",
+            "3 lente-uitjes",
+            "4 tomaten",
+            "250 g mini-mozzarellabolletjes",
+        ],
+    }
+    payload = build_payload(AH_URL, None, extra, today=TODAY)
+    assert len(payload["merge_variables"]["ingredients"]) == 9
+    assert payload_size(payload) < 1024
 
 
 def test_importing_main_does_not_require_env_vars(monkeypatch):

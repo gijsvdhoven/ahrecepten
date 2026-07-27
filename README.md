@@ -8,8 +8,8 @@ via een webhook naar een TRMNL private plugin.
 
 1. **TRMNL**: maak een Private Plugin aan met strategy **Webhook**. Kopieer de
    webhook-URL (`https://usetrmnl.com/api/custom_plugins/<id>`).
-2. **Markup**: plak `trmnl-full.liquid` in de "Edit Markup" editor van de plugin
-   (evt. ook voor half_horizontal/half_vertical/quadrant, pas naar smaak aan).
+2. **Markup**: plak per layout het bijbehorende bestand in de "Edit Markup"
+   editor van de plugin (zie [Schermontwerp](#schermontwerp)).
 3. **.env**: `cp .env.example .env` en vul beide URL's in — je publieke
    iCal-link en de webhook-URL uit stap 1. `.env` staat in `.gitignore` en zit
    dus niet in deze repo.
@@ -22,6 +22,40 @@ via een webhook naar een TRMNL private plugin.
 
    Bij het opstarten draait het script direct 1x (zie logs met
    `docker compose logs -f`), en daarna elke dag om 06:00 via cron.
+
+## Schermontwerp
+
+Het display is 800x480 en 2-bit grijs: vier tinten, geen accentkleur. Hiërarchie
+moet dus uit lettergrootte, gewicht en witruimte komen.
+
+| Layout            | Bestand                        | Formaat   | Toont                                        |
+|-------------------|--------------------------------|-----------|----------------------------------------------|
+| `full`            | `trmnl-full.liquid`            | 800 x 480 | titel, meta, afbeelding, ingrediënten (2 kol.) |
+| `half_horizontal` | `trmnl-half-horizontal.liquid` | 800 x 240 | titel, meta, afbeelding                       |
+| `half_vertical`   | `trmnl-half-vertical.liquid`   | 400 x 480 | titel, meta, afbeelding, 6 ingrediënten       |
+| `quadrant`        | `trmnl-quadrant.liquid`        | 400 x 240 | titel, meta                                   |
+
+Uitgangspunten:
+
+- **Het volle scherm is een kookscherm.** Daarom staan de ingrediënten erop en
+  niet alleen de titel. De bereidingsstappen bewust niet: die passen niet
+  leesbaar op 480 px hoogte, en je hebt ze pas nodig als je al kookt.
+- **Ingrediënten in twee kolommen** op het volle scherm, gesplitst met
+  `limit`/`offset`. Bij een oneven aantal krijgt de linkerkolom er één meer.
+- **De metaregel** ("4 personen · 20 min · 560 kcal") wordt in Liquid opgebouwd,
+  zodat er geen losse `·` overblijft als AH een veld niet levert.
+- **Elke layout degradeert netjes**: zonder afbeelding valt die kolom weg, zonder
+  ingrediënten het hele onderste blok, en zonder recept staat er "Geen recept
+  gevonden voor vandaag".
+
+Op het TRMNL-platform wordt je markup automatisch in de juiste `view`-div
+gewikkeld, dus de templates leveren alleen `layout` + `title_bar` — en die
+moeten broers zijn, niet genest.
+
+De lettergroottes en marges van het framework zelf zijn niet in deze repo te
+verifiëren; gebruik de live previewer van de plugin om de typografie te checken.
+Let daarbij vooral op de hoogte van het volle scherm bij recepten met veel
+ingrediënten.
 
 ## Deployen met Dockge
 
@@ -58,7 +92,7 @@ dus een stack met `build:` zou bij elke Update de oude image blijven draaien.
 De parser heeft een testsuite die geen netwerk nodig heeft:
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r requirements-dev.txt
 python -m pytest tests/ -q
 ```
 

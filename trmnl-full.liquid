@@ -1,7 +1,16 @@
 {%- comment -%}
-  Bouw de metaregel op ("4 personen · 20 min · 560 kcal") zonder losse
-  scheidingstekens als een van de velden ontbreekt.
+  TRMNL full layout (800x480).
+
+  Op het TRMNL-platform wordt de markup automatisch in de juiste `view`-div
+  gewikkeld, dus we leveren zelf alleen `layout` + `title_bar` -- die twee
+  moeten broers zijn, niet genest.
+
+  Het volle scherm is het "kook hier uit"-scherm: titel, metaregel en de
+  ingrediënten in twee kolommen. De bereidingsstappen laten we weg, die passen
+  niet leesbaar op 800x480.
 {%- endcomment -%}
+
+{%- comment -%} Metaregel: "4 personen · 20 min · 560 kcal", zonder losse scheidingstekens als een veld ontbreekt. {%- endcomment -%}
 {%- assign meta = "" -%}
 {%- if servings -%}{%- assign meta = meta | append: servings -%}{%- endif -%}
 {%- if prep_time -%}
@@ -13,22 +22,45 @@
   {%- assign meta = meta | append: kcal -%}
 {%- endif -%}
 
+{%- assign count = ingredients | size -%}
+{%- assign half = count | divided_by: 2.0 | ceil -%}
+
 <div class="layout">
   <div class="columns">
     <div class="column">
-      <span class="title">Recept van vandaag</span>
-      <span class="value value--large">{{ title }}</span>
-      {% if meta != "" %}
-        <span class="label">{{ meta }}</span>
-      {% endif %}
-      {% if url %}
-        <span class="description">{{ url }}</span>
-      {% endif %}
+      <span class="title title--small">Recept van vandaag</span>
+      <span class="value value--large" data-clamp="3">{{ title }}</span>
+      {%- if meta != "" %}
+      <span class="label">{{ meta }}</span>
+      {%- endif %}
     </div>
-    {% if image %}
+    {%- if image %}
     <div class="column">
-      <img src="{{ image }}" class="image" />
+      <img class="image image-dither image--cover" src="{{ image }}" alt="">
     </div>
-    {% endif %}
+    {%- endif %}
   </div>
+
+  {%- if count > 0 %}
+  {%- comment -%} De kop staat buiten de kolommen, anders begint kolom 2 een regel hoger dan kolom 1. {%- endcomment -%}
+  <span class="title title--small">Ingrediënten</span>
+  <div class="columns">
+    <div class="column">
+      {%- for ingredient in ingredients limit: half %}
+      <span class="description">{{ ingredient }}</span>
+      {%- endfor %}
+    </div>
+    <div class="column">
+      {%- for ingredient in ingredients offset: half %}
+      <span class="description">{{ ingredient }}</span>
+      {%- endfor %}
+    </div>
+  </div>
+  {%- endif %}
+</div>
+
+<div class="title_bar">
+  <img class="image" src="/images/plugins/trmnl--render.svg" alt="">
+  <span class="title">Allerhande</span>
+  <span class="instance">{{ date | date: "%d-%m-%Y" }}</span>
 </div>

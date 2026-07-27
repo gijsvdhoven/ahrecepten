@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==8.3.3
+# Alleen voor tests/test_templates.py: rendert de Liquid-templates zodat een
+# typefout daarin niet pas op het display zichtbaar wordt.
+python-liquid==2.3.0
