@@ -10,8 +10,9 @@ via een webhook naar een TRMNL private plugin.
    webhook-URL (`https://usetrmnl.com/api/custom_plugins/<id>`).
 2. **Markup**: plak `trmnl-full.liquid` in de "Edit Markup" editor van de plugin
    (evt. ook voor half_horizontal/half_vertical/quadrant, pas naar smaak aan).
-3. **.env**: is al ingevuld met je iCal-link. Vul `TRMNL_WEBHOOK_URL` nog aan
-   met de echte webhook-ID uit stap 1.
+3. **.env**: `cp .env.example .env` en vul beide URL's in — je publieke
+   iCal-link en de webhook-URL uit stap 1. `.env` staat in `.gitignore` en zit
+   dus niet in deze repo.
 4. **Build & run**:
    ```bash
    docker compose up -d --build
@@ -23,9 +24,29 @@ via een webhook naar een TRMNL private plugin.
 
 | Variabele           | Omschrijving                                      |
 |----------------------|----------------------------------------------------|
-| `ICAL_URL`           | Publieke iCal-link (webcal:// omgezet naar https://) |
+| `ICAL_URL`           | Publieke iCal-link (`webcal://` mag, wordt omgezet)  |
 | `TRMNL_WEBHOOK_URL`  | Webhook-URL van je TRMNL private plugin             |
 | `RUN_ON_START`       | `true`/`false` — direct draaien bij container-start |
+
+## Tests
+
+De parser heeft een testsuite die geen netwerk nodig heeft:
+
+```bash
+pip install -r requirements.txt pytest
+python -m pytest tests/ -q
+```
+
+De fixtures in `tests/fixtures.py` zijn gemodelleerd op de JSON-LD van een
+echte Allerhande-pagina, inclusief de AH-eigenaardigheden: `recipeYield` als
+lijst, ISO-8601 duren (`PT20M`), en `recipeInstructions` met "Stap 1" in
+`name` en de echte instructie in `text`.
+
+Los uitproberen tegen een echte receptlink:
+
+```bash
+python ah_scraper.py https://www.ah.nl/allerhande/recept/R-R484610/pastasalade-met-tomaat-en-mozzarella
+```
 
 ## Tips
 

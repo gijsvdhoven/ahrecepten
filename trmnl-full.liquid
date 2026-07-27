@@ -1,8 +1,26 @@
+{%- comment -%}
+  Bouw de metaregel op ("4 personen · 20 min · 560 kcal") zonder losse
+  scheidingstekens als een van de velden ontbreekt.
+{%- endcomment -%}
+{%- assign meta = "" -%}
+{%- if servings -%}{%- assign meta = meta | append: servings -%}{%- endif -%}
+{%- if prep_time -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: prep_time -%}
+{%- endif -%}
+{%- if kcal -%}
+  {%- if meta != "" -%}{%- assign meta = meta | append: " · " -%}{%- endif -%}
+  {%- assign meta = meta | append: kcal -%}
+{%- endif -%}
+
 <div class="layout">
   <div class="columns">
     <div class="column">
       <span class="title">Recept van vandaag</span>
       <span class="value value--large">{{ title }}</span>
+      {% if meta != "" %}
+        <span class="label">{{ meta }}</span>
+      {% endif %}
       {% if url %}
         <span class="description">{{ url }}</span>
       {% endif %}
